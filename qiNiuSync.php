@@ -49,8 +49,8 @@ if (isset($qiNiuConfig['accessKey']) && isset($qiNiuConfig['secretKey']) && isse
             fwrite($logFile, "\r\n########## " . date('Y-m-d H:i:s') . " ##########\r\n");
             foreach ($files as $file) {
                 echo "$file\r\n";
-                // 判断文件是否已经上传
                 $key = basename($file);
+                // 判断文件是否已经上传
                 if (isset($uploadFiles[$key])) {
                     continue;
                 }
