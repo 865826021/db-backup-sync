@@ -1,6 +1,7 @@
 <?php
 
 use Qiniu\Auth;
+use Qiniu\Storage\BucketManager;
 use Qiniu\Storage\UploadManager;
 
 /**
@@ -36,20 +37,33 @@ if (isset($qiNiuConfig['accessKey']) && isset($qiNiuConfig['secretKey']) && isse
     closedir($handle);
 
     if ($files) {
-        $logFile = fopen(dirname(__FILE__) . DIRECTORY_SEPARATOR . 'logs' . DIRECTORY_SEPARATOR . date('Ymd') . '.log', "a") or die("Unable to open file!");
-        fwrite($logFile, "\r\n########## " . date('Y-m-d H:i:s') . " ##########\r\n");
-        foreach ($files as $file) {
-            echo "$file\r\n";
-            $key = basename($file);
-            list($ret, $err) = $uploadMgr->putFile($token, $key, $file);
-            if ($err !== null) {
-                // write log
-                $txt = implode(' | ', $err) . "\r\n";
-                fwrite($logFile, $txt);
+        // 获取空间中的文件列表
+        $bucketMgr = new BucketManager($auth);
+        list($iterms, $marker, $err) = $bucketMgr->listFiles($bucket, '', '', null);
+        if ($err == null) {
+            $uploadFiles = [];
+            foreach ($iterms as $key => $item) {
+                $uploadFiles[$item['key']] = $item['hash'];
             }
+            $logFile = fopen(dirname(__FILE__) . DIRECTORY_SEPARATOR . 'logs' . DIRECTORY_SEPARATOR . date('Ymd') . '.log', "a") or die("Unable to open file!");
+            fwrite($logFile, "\r\n########## " . date('Y-m-d H:i:s') . " ##########\r\n");
+            foreach ($files as $file) {
+                echo "$file\r\n";
+                // 判断文件是否已经上传
+                $key = basename($file);
+                if (isset($uploadFiles[$key])) {
+                    continue;
+                }
+                list($ret, $err) = $uploadMgr->putFile($token, $key, $file);
+                if ($err !== null) {
+                    // write log
+                    $txt = implode(' | ', $err) . "\r\n";
+                    fwrite($logFile, $txt);
+                }
+            }
+            fwrite($logFile, "########## end ##########\r\n");
+            fclose($logFile);
         }
-        fwrite($logFile, "########## end ##########\r\n");
-        fclose($logFile);
     }
 
     echo "Done.\r\n";
