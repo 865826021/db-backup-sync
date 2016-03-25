@@ -1,6 +1,7 @@
 {
     "require": {
         "slim/slim": "^3.0@RC",
-        "qiniu/php-sdk": "^7.0"
+        "qiniu/php-sdk": "^7.0",
+        "katzgrau/klogger": "dev-master"
     }
 }
